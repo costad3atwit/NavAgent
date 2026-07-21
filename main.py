@@ -29,13 +29,17 @@ Y1 = Y.max()
 
 orig = ox.distance.nearest_nodes(Gp, X0, Y0)
 dest = ox.distance.nearest_nodes(Gp, X1, Y1)
+
 print(f"Origin Node: {orig}\nDestination Node: {dest}\n")
+
 print('Starting shortest path Computation')
+
 path_calc_start=time.perf_counter()
 route = ox.routing.shortest_path(G, orig, dest, weight="length")
 print(f"Type of Route: {type(route)}\nRoute: {route}")
 path_calc_end=time.perf_counter()
 path_calc_time = path_calc_end - path_calc_start
+
 print(f'Finding the shortest path took: {path_calc_time:.6f}')
 
 """
