@@ -7,11 +7,13 @@ import time
 # download/model a street network for some city then visualize it
 
 # Start the timer
+print('Starting Graph Retrieval')
 start_graph_from_place = time.perf_counter()
 G = ox.graph.graph_from_place("Boston, Massachusetts, USA", network_type="drive")
 Gp = ox.projection.project_graph(G)
 end_graph_from_place = time.perf_counter()
-elapsed = end_graph_from_place - start_graph_from_place
+elapsed_download = end_graph_from_place - start_graph_from_place
+print(f"Retreiving The Graph Took: {elapsed_download:.6f}")
 #fig, ax = ox.plot.plot_graph(G)
 
 # find the shortest path (by distance) between these nodes then plot it
@@ -26,5 +28,10 @@ Y1 = Y.max()
 
 orig = ox.distance.nearest_nodes(Gp, X0, Y0)
 dest = ox.distance.nearest_nodes(Gp, X1, Y1)
+print('Starting shortest path Computation')
+path_calc_start=time.perf_counter()
 route = ox.routing.shortest_path(G, orig, dest, weight="length")
+path_calc_end=time.perf_counter()
+path_calc_time = path_calc_end - path_calc_start
+print(f'Finding the shortest path took: {path_calc_time:.6f}')
 fig, ax = ox.plot.plot_graph_route(G, route, route_color="y", route_linewidth=6, node_size=0)
