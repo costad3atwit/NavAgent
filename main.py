@@ -9,7 +9,8 @@ import time
 # Start the timer
 print('Starting Graph Retrieval')
 start_graph_from_place = time.perf_counter()
-G = ox.graph.graph_from_place("Boston, Massachusetts, USA", network_type="drive")
+# G = ox.graph.graph_from_place("Boston, Massachusetts, USA", network_type="drive")
+G = ox.graph.graph_from_bbox((-71.21046,42.24448,-70.92035,42.37891),network_type="drive",simplify=False,retain_all=False,truncate_by_edge=True)
 Gp = ox.projection.project_graph(G)
 end_graph_from_place = time.perf_counter()
 elapsed_download = end_graph_from_place - start_graph_from_place
@@ -28,10 +29,21 @@ Y1 = Y.max()
 
 orig = ox.distance.nearest_nodes(Gp, X0, Y0)
 dest = ox.distance.nearest_nodes(Gp, X1, Y1)
+print(f"Origin Node: {orig}\nDestination Node: {dest}\n")
 print('Starting shortest path Computation')
 path_calc_start=time.perf_counter()
 route = ox.routing.shortest_path(G, orig, dest, weight="length")
+print(f"Type of Route: {type(route)}\nRoute: {route}")
 path_calc_end=time.perf_counter()
 path_calc_time = path_calc_end - path_calc_start
 print(f'Finding the shortest path took: {path_calc_time:.6f}')
+
+"""
+#FOR PROSPERO UNCOMMENT TO WRITE A FILE CONTAINING THE ROUTE
+with open('output.txt', 'w') as file:
+    file.write(','.join(route))
+
+"""
+
+#FOR PROSPERO, COMMENT
 fig, ax = ox.plot.plot_graph_route(G, route, route_color="y", route_linewidth=6, node_size=0)
