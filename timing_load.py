@@ -35,7 +35,7 @@ print(f"Origin Node: {orig}\nDestination Node: {dest}\n")
 
 print('Starting shortest path Computation')
 path_calc_start=time.perf_counter()
-route = ox.routing.shortest_path(G, orig=orig, dest=dest, weight="length") # Was not computing with load_graphml, had to use keyword arguments over positional arguments
+route = ox.routing.shortest_path(G=G, orig=orig, dest=dest, weight="length") # Was not computing with load_graphml, had to use keyword arguments over positional arguments
 print(f"Type of Route: {type(route)}\nRoute: {route}")
 path_calc_end=time.perf_counter()
 path_calc_time = path_calc_end - path_calc_start
@@ -50,4 +50,4 @@ with open('output.txt', 'w') as file:
 """
 
 #FOR PROSPERO, COMMENT
-fig, ax = ox.plot.plot_graph_route(G, route, route_color="y", route_linewidth=6, node_size=0)
+fig, ax = ox.plot.plot_graph_route(G, route=route, route_color="y", route_linewidth=6, node_size=0)
