@@ -36,6 +36,7 @@ print('Starting shortest path Computation')
 
 path_calc_start=time.perf_counter()
 route = ox.routing.shortest_path(G, orig, dest, weight="length")
+#route = a.astar(G, orig, dest, weight="length")
 print(f"Type of Route: {type(route)}\nRoute: {route}")
 path_calc_end=time.perf_counter()
 path_calc_time = path_calc_end - path_calc_start
