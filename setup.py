@@ -11,7 +11,7 @@ def saveGraph(location=(-71.21046,42.24448,-70.92035,42.37891), save_path="data/
     print(f"`is_string` evaluates to {is_string}\n")
 
     # Create branching condition based on the location variable type
-    printf("[Attempting graph retreival]")
+    print("[Attempting graph retreival]")
     if is_tuple:
         G = ox.graph.graph_from_bbox(location, network_type="drive", 
                              simplify=False, retain_all=False, truncate_by_edge=True)
