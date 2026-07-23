@@ -8,6 +8,8 @@ class Map:
 
     def load_map(path_to_map: str) -> MultiDiGraph:
         G = ox.io.load_graphml(filepath=path_to_map)
+        G = ox.routing.add_edge_speeds(G)
+        G = ox.routing.add_edge_travel_times(G)
         Gp = ox.projection.project_graph(G)
 
         return Gp
