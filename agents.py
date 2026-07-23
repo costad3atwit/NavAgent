@@ -101,5 +101,23 @@ class SearchAgents:
 
         return FAILURE
         """
-        return None
+        fringe = util.Queue() # Potentially use heapqueue?
+        fringe.push( (problem.getStartState(), []) )
+        visited = set()
+
+        while not fringe.isEmpty():
+            state, actions = fringe.pop()
+
+            if state in visited:
+                continue
+            visited.add(state)
+
+            if problem.isGoalState(state):
+                return actions
+
+            for successor, action, stepCost in problem.getSuccessors(state):
+                if successor not in visited:
+                    fringe.push( (successor, actions + [action]) )
+
+        return []
     
