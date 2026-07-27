@@ -44,7 +44,7 @@ class SearchAgents:
                 visited.add(current)
 
                 for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
-
+                    print("filler block delete on merge")
 
             return None
 
@@ -64,60 +64,43 @@ class SearchAgents:
             return None
         
     
-    def BeamSearchAgent():
-        # TODO: Implement the BeamSearch agent
-        """
-        function BEAM_SEARCH(start_node, goal_test, beam_width, max_depth):
-        current_level ← [start_node]
-        depth ← 0
+    def BeamSearchAgent(G, start_node, goal_test, beam_width, max_depth):
+        # TODO: Apply heuristic evaluation relevant to the Networkx Graph
+        current_level = [start_node]
+        depth = 0
 
-        while current_level is not empty AND depth < max_depth:
-            all_successors ← []
+        while current_level and depth < max_depth:
+            all_successors = []
 
-            // Generate all successors from current level
-            for each node in current_level:
-                if goal_test(node):
-                    return SUCCESS (node)
+            # Generate all successors from current level
+            for node in current_level:
+                if node == goal_test:
+                    return node # Success
 
-                successors ← get_successors(node)
-                for each successor in successors:
-                    successor.score ← evaluation_function(successor)
+                successors = nx.neighbors(G, node)
+                for successor in successors:
+                    successor.value = heuristicEvaluation(successor)
                     all_successors.append(successor)
 
-            if all_successors is empty:
-                return FAILURE
+                if not all_successors:
+                    return []
 
-            // Sort all successors by their scores (best first)
-            sorted_successors ← sort(all_successors, by=score, descending=True)
+                # Sort all successors by their scores (best first)
+                sorted_successors = heapq.heapify(all_successors)
 
-            // Keep only top beam_width candidates for next level
-            current_level ← sorted_successors[0 : beam_width]
-            depth ← depth + 1
+                # Keep only top beam_width candidates for next level
+                current_level = sorted_successors[0 : beam_width]
+                depth = depth + 1
 
-        // Check final level for goal
-        for each node in current_level:
-            if goal_test(node):
-                return SUCCESS (node)
+            # Check final level for goal
+            for node in current_level:
+                if node == goal_test:
+                    return node # Success 
 
-        return FAILURE
-        """
-        fringe = util.Queue() # Potentially use heapqueue?
-        fringe.push( (problem.getStartState(), []) )
-        visited = set()
+            return [] # Failure
+                
+                 
+        
 
-        while not fringe.isEmpty():
-            state, actions = fringe.pop()
-
-            if state in visited:
-                continue
-            visited.add(state)
-
-            if problem.isGoalState(state):
-                return actions
-
-            for successor, action, stepCost in problem.getSuccessors(state):
-                if successor not in visited:
-                    fringe.push( (successor, actions + [action]) )
-
-        return []
+        
     
