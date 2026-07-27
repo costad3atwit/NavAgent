@@ -107,11 +107,11 @@ class SearchAgents:
 
                 successors = nx.neighbors(G, node)
                 for successor in successors:
-                    successor.value = heuristicEvaluation(successor)
-                    all_successors.append(successor)
+                    value = heuristicEvaluation(successor)
+                    all_successors.append(successor, value)
 
                 if not all_successors:
-                    return []
+                    return [] # Failure
 
                 # Sort all successors by their scores (best first)
                 sorted_successors = heapq.heapify(all_successors)
@@ -120,9 +120,9 @@ class SearchAgents:
                 current_level = sorted_successors[0 : beam_width]
                 depth = depth + 1
 
-            # Check final level for goal
-            for node in current_level:
-                if node == goal_test:
-                    return node # Success 
+        # Check final level for goal
+        for node in current_level:
+            if node == goal_test:
+                return node # Success 
 
-            return [] # Failure
+        return [] # Failure
