@@ -45,8 +45,24 @@ class SearchAgents:
 
                 for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
 
+                    # there may be several parallel edges to this same neighbor 
+                    # since it's a MultiDiGraph so we pick the cheapest one
+                    best_edge_key, best_edge_cost = None, float('inf')
+                    for key, edge_data in G[current][neighbor].items():
+                        cost = weight_func(current, neighbor, edge_data)
+                        if cost < best_edge_cost:
+                            best_edge_cost = cost
+                            best_edge_key = key
 
-            return None
+                    tentative_g = g_score[current] + best_edge_cost
+
+                    if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                        g_score[neighbor] = tentative_g
+                        came_from[neighbor] = (current, best_edge_key)
+                        priority = tentative_g + heuristic(neighbor, goal)
+                        heapq.heappush(open_set, (priority, next(counter), neighbor))
+
+            return None   # no path exists
 
         def reconstruct_path(came_from, current):
             path = []
@@ -62,8 +78,19 @@ class SearchAgents:
         def speedAndDistanceHeuristic():
             #TODO: implement
             return None
-        
-    
+
+    @staticmethod
+    def distance_weight(u, v, edge_data):
+        # weight_func for shortest-distance search: cost of an edge is just its length.
+        return edge_data['length']
+
+    @staticmethod
+    def travel_time_weight(u, v, edge_data):
+        # weight_func for fastest-route search. Requires the graph to have been
+        # run through ox.routing.add_edge_speeds() and add_edge_travel_times()
+        # beforehand so edge_data['travel_time'] exists.
+        return edge_data['travel_time']
+
     def BeamSearchAgent():
         # TODO: Implement the BeamSearch agent
         return None
