@@ -27,6 +27,8 @@ class Util:
             return 0
 
     def euclideanDistanceHeuristic(self, G: MultiDiGraph, current_node=None, goal_node=None):
+        if self.canReachGoal:
+            return 0
         route = ox.routing.shortest_path(G=G, orig=current_node, dest=goal_node, weight="length")
         total_length = 0
 
@@ -35,4 +37,13 @@ class Util:
             length = G.get_edge_data(route[i - 1], route[i], 'length')
             total_length += length
         return total_length
+
+    def straightLineTravelHeuristic(self, G: MultiDiGraph, current_node, goal_node, speed):
+        return self.travelTime(speed, self.straightLineHeuristic(G, current_node=current_node, goal_node=goal_node))
+
+    def euclideanDistanceTravelHeuristic(self, G: MultiDiGraph, current_node, goal_node, speed):
+        return self.travelTime(speed, self.euclideanDistanceHeuristic(G, current_node=current_node, goal_node=goal_node))
+
+    def travelTime(self, speed, length) -> int:
+        return length / speed
             
