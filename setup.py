@@ -21,7 +21,9 @@ def saveGraph(location=(-71.21046,42.24448,-70.92035,42.37891), save_path="data/
         print("`location` must be a string or a tuple (LEFT, BOTTOM, LEFT, TOP)")
         return
 
+    # Add edge speeds
+    G = ox.routing.add_edge_speeds(G)
+    G = ox.routing.add_edge_travel_times(G)
+
     # Save the graph
     ox.io.save_graphml(G,filepath=save_path, gephi=False, encoding='utf-8')
-
-# saveGraph(location="Weymouth, Massachusetts, USA", save_path="data/weymouth.graphml")
