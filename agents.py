@@ -1,6 +1,7 @@
 import itertools
 import networkx as nx
 import heapq
+from util import Util
 
 class SearchAgents:
 
@@ -107,7 +108,7 @@ class SearchAgents:
 
                 successors = nx.neighbors(G, node)
                 for successor in successors:
-                    value = heuristicEvaluation(successor)
+                    value = Util.euclideanDistanceHeuristic(G=G, start_node=successor, goal_node=goal_test)
                     all_successors.append(successor, value)
 
                 if not all_successors:
