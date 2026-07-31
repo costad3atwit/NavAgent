@@ -22,8 +22,14 @@ def saveGraph(location=(-71.21046,42.24448,-70.92035,42.37891), save_path="data/
         return
 
     # Add edge speeds
+    print("[Adding edge speeds...]")
     G = ox.routing.add_edge_speeds(G)
     G = ox.routing.add_edge_travel_times(G)
 
     # Save the graph
+    print("[Attempting to save graph...]")
     ox.io.save_graphml(G,filepath=save_path, gephi=False, encoding='utf-8')
+    print("Graph successfully saved to disc.")
+
+if __name__ == "__main__":
+    saveGraph()
