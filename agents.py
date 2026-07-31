@@ -1,5 +1,6 @@
 import itertools
 import heapq
+from util import Util
 from math import sqrt
 
 
@@ -115,7 +116,39 @@ class SearchAgents:
         # run through ox.routing.add_edge_speeds() and add_edge_travel_times()
         # beforehand so edge_data['travel_time'] exists.
         return edge_data['travel_time']
+        
+    
+    def BeamSearchAgent(G, start_node, goal_test, beam_width, max_depth):
+        # TODO: Apply heuristic evaluation relevant to the Networkx Graph
+        current_level = [start_node]
+        depth = 0
 
-    def BeamSearchAgent():
-        # TODO: Implement the BeamSearch agent
-        return None
+        while current_level and depth < max_depth:
+            all_successors = []
+
+            # Generate all successors from current level
+            for node in current_level:
+                if node == goal_test:
+                    return node # Success
+
+                successors = nx.neighbors(G, node)
+                for successor in successors:
+                    value = Util.euclideanDistanceHeuristic(G=G, start_node=successor, goal_node=goal_test)
+                    all_successors.append(successor, value)
+
+                if not all_successors:
+                    return [] # Failure
+
+                # Sort all successors by their scores (best first)
+                sorted_successors = heapq.heapify(all_successors)
+
+                # Keep only top beam_width candidates for next level
+                current_level = sorted_successors[0 : beam_width]
+                depth = depth + 1
+
+        # Check final level for goal
+        for node in current_level:
+            if node == goal_test:
+                return node # Success 
+
+        return [] # Failure
