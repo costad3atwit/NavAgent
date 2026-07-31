@@ -1,83 +1,108 @@
 import itertools
-import networkx as nx
 import heapq
+from math import sqrt
+
+
+class AstarAgent:
+    """
+    Instantiate one AstarAgent and reuse it to run astar() over the same
+    graph with different start/goal pairs for testing
+    """
+
+    def astar(self, G, start, goal, heuristic, weight_func):
+        """
+        heuristic(node, goal) -> estimated cost from `node` to `goal`.
+        Must be admissible (never overestimate the true remaining cost) or the
+        path found isn't guaranteed optimal. Whatever units it returns must
+        match weight_func's units (e.g. don't mix a distance heuristic with
+        a time-based weight_func).
+
+        weight_func(u, v, edge_data) -> cost of a single edge from u to v,
+        where edge_data is one parallel edge's attribute dict from a
+        MultiDiGraph (G[u][v][key]). Called once per parallel edge so the
+        cheapest of several u->v edges can be picked.
+
+        g_score[n] = best known cost from start to n
+        f_score[n] = g_score[n] + heuristic(n, goal)  -> priority in the queue
+        """
+
+        counter = itertools.count()
+        open_set = []
+        heapq.heappush(open_set, (heuristic(start, goal), next(counter), start)) # push start to the queue using heurisitc for priority
+        came_from = {}              # for reconstructing the path afterwards
+        g_score = { start: 0 }      # actual cost from start up to here
+        visited = set()             # nodes we've already expanded/finalized
+
+        while open_set:
+            _, _, current = heapq.heappop(open_set) #take off the highest priority node (lowest f score) item
+
+            if current == goal:
+                return self._reconstruct_path(came_from, current)
+
+            if current in visited:
+                continue                     # skip already visited nodes
+            visited.add(current)
+
+            for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
+
+                # there may be several parallel edges to this same neighbor
+                # since it's a MultiDiGraph so we pick the cheapest one
+                best_edge_key, best_edge_cost = None, float('inf')
+                for key, edge_data in G[current][neighbor].items():
+                    cost = weight_func(current, neighbor, edge_data)
+                    if cost < best_edge_cost:
+                        best_edge_cost = cost
+                        best_edge_key = key
+
+                tentative_g = g_score[current] + best_edge_cost
+
+                if neighbor not in g_score or tentative_g < g_score[neighbor]:
+                    g_score[neighbor] = tentative_g
+                    came_from[neighbor] = (current, best_edge_key)
+                    priority = tentative_g + heuristic(neighbor, goal)
+                    heapq.heappush(open_set, (priority, next(counter), neighbor))
+
+        return None   # no path exists
+
+    @staticmethod
+    def _reconstruct_path(came_from, current):
+        path = []
+        node = current
+        while node in came_from:
+            predecessor, edge_key = came_from[node]
+            path.append((node, edge_key))
+            node = predecessor
+        path.append((node, None))   # start node: no incoming edge
+        path.reverse()
+        return path
+
+    @staticmethod
+    def straight_line_distance(G, u, v):
+        # Euclidean distance between two nodes' projected coordinates, in
+        # the graph's projected units (meters after ox.projection.project_graph).
+        x1, y1 = G.nodes[u]['x'], G.nodes[u]['y']
+        x2, y2 = G.nodes[v]['x'], G.nodes[v]['y']
+        return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+
+    @classmethod
+    def speed_and_distance_heuristic(cls, G, max_speed_mps):
+        """
+        Returns a heuristic(node, goal) closure admissible for travel_time_weight:
+        straight-line distance to the goal divided by the fastest possible
+        speed anywhere in the graph. Since no real route can be faster than
+        max_speed_mps, this estimate can never exceed the true remaining
+        travel time.
+        """
+        def heuristic(node, goal):
+            return cls.straight_line_distance(G, node, goal) / max_speed_mps
+        return heuristic
+
 
 class SearchAgents:
 
     def BFSagent():
         # TODO: Implement the BFSagent
         return None
-    
-    def AstarAgent():
-        def astar(G, start, goal, heuristic, weight_func):
-            """
-            heuristic(node, goal) -> estimated cost from `node` to `goal`.
-            Must be admissible (never overestimate the true remaining cost) or the
-            path found isn't guaranteed optimal. Whatever units it returns must
-            match weight_func's units (e.g. don't mix a distance heuristic with
-            a time-based weight_func).
-
-            weight_func(u, v, edge_data) -> cost of a single edge from u to v,
-            where edge_data is one parallel edge's attribute dict from a
-            MultiDiGraph (G[u][v][key]). Called once per parallel edge so the
-            cheapest of several u->v edges can be picked.
-
-            g_score[n] = best known cost from start to n
-            f_score[n] = g_score[n] + heuristic(n, goal)  -> priority in the queue
-            """
-
-            counter = itertools.count()
-            open_set = []
-            heapq.heappush(open_set, (heuristic(start, goal), next(counter), start)) # push start to the queue using heurisitc for priority
-            came_from = {}              # for reconstructing the path afterwards
-            g_score = { start: 0 }      # actual cost from start up to here
-            visited = set()             # nodes we've already expanded/finalized
-
-            while open_set:
-                _, _, current = heapq.heappop(open_set) #take off the highest priority node (lowest f score) item
-
-                if current == goal:
-                    return reconstruct_path(came_from, current)
-
-                if current in visited:
-                    continue                     # skip already visited nodes
-                visited.add(current)
-
-                for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
-
-                    # there may be several parallel edges to this same neighbor 
-                    # since it's a MultiDiGraph so we pick the cheapest one
-                    best_edge_key, best_edge_cost = None, float('inf')
-                    for key, edge_data in G[current][neighbor].items():
-                        cost = weight_func(current, neighbor, edge_data)
-                        if cost < best_edge_cost:
-                            best_edge_cost = cost
-                            best_edge_key = key
-
-                    tentative_g = g_score[current] + best_edge_cost
-
-                    if neighbor not in g_score or tentative_g < g_score[neighbor]:
-                        g_score[neighbor] = tentative_g
-                        came_from[neighbor] = (current, best_edge_key)
-                        priority = tentative_g + heuristic(neighbor, goal)
-                        heapq.heappush(open_set, (priority, next(counter), neighbor))
-
-            return None   # no path exists
-
-        def reconstruct_path(came_from, current):
-            path = []
-            node = current
-            while node in came_from:
-                predecessor, edge_key = came_from[node]
-                path.append((node, edge_key))
-                node = predecessor
-            path.append((node, None))   # start node: no incoming edge
-            path.reverse()
-            return path
-
-        def speedAndDistanceHeuristic():
-            #TODO: implement
-            return None
 
     @staticmethod
     def distance_weight(u, v, edge_data):
@@ -94,4 +119,3 @@ class SearchAgents:
     def BeamSearchAgent():
         # TODO: Implement the BeamSearch agent
         return None
-    
