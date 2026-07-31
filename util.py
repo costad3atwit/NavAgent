@@ -42,29 +42,9 @@ class Util:
         def heuristic(node, goal):
             return cls.straight_line_distance(G, node, goal) / max_speed_mps
         return heuristic
-    
-    def straightLineHeuristic(self, G: MultiDiGraph, current_node=None, goal_node=None):
-
-        if self.canReachGoal(G, current_node, goal_node):
-            return 0
-
-        if current_node and goal_node:
-            x1 = current_node.get_node_attributes(G, 'x')
-            y1 = current_node.get_node_attributes(G, 'y')
-
-            x2 = goal_node.get_node_attributes(G, 'x')
-            y2 = goal_node.get_node_attributes(G, 'y')
-
-            return sqrt(((x2 - x1) ** 2) + ((y2 - y1) ** 2))
-        else:
-            return 0
-
 
     def straightLineTravelHeuristic(self, G: MultiDiGraph, current_node, goal_node, speed):
         return self.travelTime(speed, self.straightLineHeuristic(G, current_node=current_node, goal_node=goal_node))
-
-    def euclideanDistanceTravelHeuristic(self, G: MultiDiGraph, current_node, goal_node, speed):
-        return self.travelTime(speed, self.euclideanDistanceHeuristic(G, current_node=current_node, goal_node=goal_node))
 
     def travelTime(self, speed, length) -> int:
         return length / speed
