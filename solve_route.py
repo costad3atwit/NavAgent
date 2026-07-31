@@ -23,7 +23,7 @@ print(f"Start node: {start}, Goal node: {goal}")
 
 #was having issue with a path not existing because the graph is directed but cuts off with a hard boundary
 #meaning we can't solve for any route even if it exists IRL
-if not nx.has_path(projected_graph, start, goal):
+if not Util.canReachGoal(projected_graph, start, goal):
     raise SystemExit(f"No directed path exists between {start} and {goal} -- pick different coordinates")
 
 max_speed_kph = max(data.get("speed_kph", 0) for _, _, data in projected_graph.edges(data=True))
