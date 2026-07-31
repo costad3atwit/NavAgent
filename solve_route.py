@@ -5,6 +5,7 @@ import osmnx as ox
 
 from agents import AstarAgent, SearchAgents
 from map import Map
+from util import Util
 
 
 print("Loading map and building projected graph...")
@@ -30,7 +31,7 @@ max_speed_mps = max_speed_kph * 1000 / 3600
 print(f"Max edge speed in graph: {max_speed_kph:.1f} kph ({max_speed_mps:.2f} m/s)")
 
 astar_agent = AstarAgent()
-heuristic = astar_agent.speed_and_distance_heuristic(projected_graph, max_speed_mps)
+heuristic = Util.speed_and_distance_heuristic(projected_graph, max_speed_mps)
 
 print("Running AstarAgent.astar()...")
 astar_start_time = time.perf_counter()
