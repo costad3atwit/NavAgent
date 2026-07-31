@@ -30,6 +30,7 @@ max_speed_mps = max_speed_kph * 1000 / 3600
 print(f"Max edge speed in graph: {max_speed_kph:.1f} kph ({max_speed_mps:.2f} m/s)")
 
 astar_agent = AstarAgent()
+# beam_agent = BeamSearchAgent()
 heuristic = Util.speed_and_distance_heuristic(projected_graph, max_speed_mps)
 
 print("Running AstarAgent.astar()...")
@@ -44,6 +45,22 @@ path = astar_agent.astar(
 astar_elapsed = time.perf_counter() - astar_start_time
 print(f"astar() finished in {astar_elapsed:.3f}s")
 
+"""
+print("Running BeamAgent.beam()...")
+beam_start_time = time.perf_counter()
+path = beam_agent.beam_search(
+    #TODO: Modify args as needed to fit actual beam_search() method
+    projected_graph,
+    start,
+    goal,
+    heuristic=heuristic,
+    weight_func=SearchAgents.travel_time_weight,
+)
+beam_elapsed = time.perf_counter() - beam_start_time
+print(f"beam() finished in {beam_elapsed:.3f}s")
+"""
+
+
 if path is None:
     print(f"No route found between {start} and {goal}")
 else:
@@ -53,14 +70,10 @@ else:
     print("Computing shortest (by distance) route for comparison...")
     shortest_route = ox.routing.shortest_path(G=projected_graph, orig=start, dest=goal, weight="length")
 
-    if shortest_route is None:
-        print(f"No shortest-distance route found between {start} and {goal}")
-        fig, ax = Map.plot_route(projected_graph, fastest_route)
-    else:
-        print(f"Shortest route found with {len(shortest_route)} nodes, plotting both routes...")
-        fig, ax = Map.plot_routes(
-            projected_graph,
-            routes=[fastest_route, shortest_route],
-            route_colors=["y", "c"],
-        )
+    print(f"Shortest route found with {len(shortest_route)} nodes, plotting both routes...")
+    fig, ax = Map.plot_routes(
+        projected_graph,
+        routes=[fastest_route, shortest_route],
+        route_colors=["y", "c"],
+    )
     print("Done.")
