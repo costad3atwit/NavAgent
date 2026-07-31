@@ -6,8 +6,8 @@ from networkx.classes.multidigraph import MultiDiGraph
 
 
 class Util:
-
-    def canReachGoal(self, G: MultiDiGraph, start_node, goal_node):
+    @staticmethod
+    def canReachGoal(G: MultiDiGraph, start_node, goal_node):
         return goal_node in nx.descendants(G, start_node)
 
     @staticmethod

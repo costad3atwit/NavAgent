@@ -1,6 +1,5 @@
 import time
 
-import networkx as nx
 import osmnx as ox
 
 from agents import AstarAgent, SearchAgents
