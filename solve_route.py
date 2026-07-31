@@ -2,7 +2,7 @@ import time
 
 import osmnx as ox
 
-from agents import AstarAgent, SearchAgents
+from agents import AstarAgent, BeamSearchAgent
 from map import Map
 from util import Util
 
@@ -39,10 +39,23 @@ path = astar_agent.astar(
     start,
     goal,
     heuristic=heuristic,
-    weight_func=SearchAgents.travel_time_weight,
+    weight_func=Util.travel_time_weight
 )
 astar_elapsed = time.perf_counter() - astar_start_time
 print(f"astar() finished in {astar_elapsed:.3f}s")
+
+# print("Running BeamSearchAgent.beam_search()...")
+# beam_search_start_time = time.perf_counter()
+# path = BeamSearchAgent.beam_search(
+#     projected_graph,
+#     start=start,
+#     goal=goal,
+#     beam_width=20,
+#     heuristic=heuristic,
+#     weight_func=Util.travel_time_weight
+# )
+# beamsearch_elapsed = time.perf_counter() - beam_search_start_time
+# print(f"beam_search() finished in {beamsearch_elapsed:.3f}s")
 
 if path is None:
     print(f"No route found between {start} and {goal}")
