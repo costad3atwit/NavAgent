@@ -65,31 +65,19 @@ class AstarAgent:
 
         return None   # no path exists
 
-class SearchAgents:
+class BeamSearchAgent:
+    """
 
-    def BFSagent():
-        # TODO: Implement the BFSagent
-        return None
-
-    @staticmethod
-    def distance_weight(u, v, edge_data):
-        # weight_func for shortest-distance search: cost of an edge is just its length.
-        return edge_data['length']
-
-    @staticmethod
-    def travel_time_weight(u, v, edge_data):
-        # weight_func for fastest-route search. Requires the graph to have been
-        # run through ox.routing.add_edge_speeds() and add_edge_travel_times()
-        # beforehand so edge_data['travel_time'] exists.
-        return edge_data['travel_time']
+    """
+    def BeamSearchAgent(G, start_node, goal_test, beam_width):
+        """
         
-    
-    def BeamSearchAgent(G, start_node, goal_test, beam_width, max_depth):
-        # TODO: Apply heuristic evaluation relevant to the Networkx Graph
+        """
         current_level = [start_node]
         depth = 0
+        visited = {}
 
-        while current_level and depth < max_depth:
+        while current_level:
             all_successors = []
 
             # Generate all successors from current level
@@ -99,7 +87,7 @@ class SearchAgents:
 
                 successors = nx.neighbors(G, node)
                 for successor in successors:
-                    value = Util.euclideanDistanceHeuristic(G=G, start_node=successor, goal_node=goal_test)
+                    value = Util.straight_line_distance(G=G, start_node=successor, goal_node=goal_test)
                     all_successors.append(successor, value)
 
                 if not all_successors:
