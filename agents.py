@@ -69,26 +69,29 @@ class BeamSearchAgent:
     """
 
     """
-    def BeamSearchAgent(G, start_node, goal_test, beam_width):
+    def beam_search(G, start, goal, beam_width):
         """
         
         """
-        current_level = [start_node]
-        depth = 0
-        visited = {}
+        current_level = [start]
+        visited = set()
+        g_score = {}
+        came_from = []
 
         while current_level:
             all_successors = []
 
             # Generate all successors from current level
-            for node in current_level:
-                if node == goal_test:
-                    return node # Success
+            for current_node in current_level:
+                if current_node == goal:
+                    return Util._reconstruct_path(came_from=came_from, node=current_node) # Success
 
-                successors = nx.neighbors(G, node)
+                visited.add(current_node)
+                
+                successors = G.successors(current_node)
                 for successor in successors:
-                    value = Util.straight_line_distance(G=G, start_node=successor, goal_node=goal_test)
-                    all_successors.append(successor, value)
+                    value = Util.straight_line_distance(G=G, start_node=successor, goal_node=goal)
+                    all_successors.append(value, successor)
 
                 if not all_successors:
                     return [] # Failure
@@ -98,11 +101,10 @@ class BeamSearchAgent:
 
                 # Keep only top beam_width candidates for next level
                 current_level = sorted_successors[0 : beam_width]
-                depth = depth + 1
 
         # Check final level for goal
-        for node in current_level:
-            if node == goal_test:
-                return node # Success 
+        for current_node in current_level:
+            if current_node == goal:
+                return current_node # Success 
 
         return [] # Failure
