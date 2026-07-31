@@ -69,14 +69,14 @@ class BeamSearchAgent:
     """
 
     """
-    def beam_search(G, start, goal, beam_width):
+    def beam_search(G, start, goal, beam_width, heuristic, weight_func):
         """
         
         """
         current_level = [start]
         visited = set()
-        g_score = {}
-        came_from = []
+        came_from = {}
+        g_score = { start: 0 }
 
         while current_level:
             all_successors = []
@@ -86,12 +86,27 @@ class BeamSearchAgent:
                 if current_node == goal:
                     return Util._reconstruct_path(came_from=came_from, node=current_node) # Success
 
+                if current_node in visited:
+                    continue
                 visited.add(current_node)
                 
                 successors = G.successors(current_node)
                 for successor in successors:
-                    value = Util.straight_line_distance(G=G, start_node=successor, goal_node=goal)
-                    all_successors.append(value, successor)
+
+                    best_edge_key, best_edge_cost = None, float('inf')
+                    for key, edge_data in G[current_node][successor].items():
+                        cost = weight_func(current_node, successor, edge_data)
+                        if cost < best_edge_cost:
+                            best_edge_cost = cost
+                            best_edge_key = key
+
+                    current_g = g_score[current_node] + best_edge_cost
+
+                    if successor not in g_score or current_g < g_score[successor]:
+                        g_score[successor] = current_g
+                        came_from[successor] = (current_node, best_edge_key)
+                        value = current_g + heuristic(successor, goal)
+                        all_successors.append((value, successor))
 
                 if not all_successors:
                     return [] # Failure
