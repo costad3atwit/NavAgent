@@ -23,6 +23,13 @@ class Util:
         return path
 
     @staticmethod
+    def travel_time_weight(u, v, edge_data):
+        # weight_func for fastest-route search. Requires the graph to have been
+        # run through ox.routing.add_edge_speeds() and add_edge_travel_times()
+        # beforehand so edge_data['travel_time'] exists.
+        return edge_data['travel_time']
+
+    @staticmethod
     def straight_line_distance(G, u, v):
         # Euclidean distance between two nodes' projected coordinates, in
         # the graph's projected units (meters after ox.projection.project_graph).
