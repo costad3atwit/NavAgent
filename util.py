@@ -30,6 +30,18 @@ class Util:
         x2, y2 = G.nodes[v]['x'], G.nodes[v]['y']
         return sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
+    @staticmethod
+    def distance_weight(u, v, edge_data):
+        # weight_func for shortest-distance search: cost of an edge is just its length.
+        return edge_data['length']
+    
+    @staticmethod
+    def travel_time_weight(u, v, edge_data):
+        # weight_func for fastest-route search. Requires the graph to have been
+        # run through ox.routing.add_edge_speeds() and add_edge_travel_times()
+        # beforehand so edge_data['travel_time'] exists.
+        return edge_data['travel_time']
+
     @classmethod
     def speed_and_distance_heuristic(cls, G, max_speed_mps):
         """
