@@ -1,6 +1,9 @@
 import itertools
 import heapq
+from collections import deque
+
 from util import Util
+
 import networkx as nx
 from networkx import MultiDiGraph
 
@@ -146,12 +149,12 @@ class BasicAgents:
                            goal: int,
                            weight_func=Util.travel_time_weight):
         frontier = []
-        frontier.append( (start, []) )
+        frontier.append( start )
         visited = set()
         came_from = {}
 
         while frontier:
-            current_node, something2 = frontier.pop()
+            current_node = frontier.pop()
 
             if current_node in visited:
                 continue
@@ -170,9 +173,44 @@ class BasicAgents:
                         best_edge_cost = cost
                         best_edge_key = key
 
-                came_from[successor] = (current_node, best_edge_key)
+                if successor not in visited:
+                    came_from[successor] = (current_node, best_edge_key)
+                    frontier.append( successor )
+
+        return None
+
+    def breadth_first_search(self,
+                             G: MultiDiGraph,
+                             start: int,
+                             goal: int,
+                             weight_func = Util.travel_time_weight):
+        frontier = deque()
+        frontier.append( start )
+        visited = set()
+        came_from = {}
+
+        while frontier:
+            current_node = frontier.popleft()
+
+            if current_node in visited:
+                continue
+
+            visited.add(current_node)
+
+            if current_node == goal:
+                return Util._reconstruct_path(came_from=came_from, current=current_node)
+
+            for successor in G.successors(current_node):
+
+                best_edge_key, best_edge_cost = None, float('inf')
+                for key, edge_data in G[current_node][successor].items():
+                    cost = weight_func(current_node, successor, edge_data)
+                    if cost < best_edge_cost:
+                        best_edge_cost = cost
+                        best_edge_key = key
 
                 if successor not in visited:
-                    frontier.append( (successor) )
-                    
+                    came_from[successor] = (current_node, best_edge_key)
+                    frontier.append( successor )
+
         return None
