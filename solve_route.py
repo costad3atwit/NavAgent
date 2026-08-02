@@ -4,7 +4,7 @@ import osmnx as ox
 from optparse import OptionParser
 import sys
 
-from agents import AstarAgent, BeamSearchAgent
+from agents import AstarAgent, BeamSearchAgent, BasicAgents
 from map import Map
 from util import Util
 
@@ -81,6 +81,42 @@ def runSearch():
             beam_elapsed = time.perf_counter() - beam_start_time
             print(f"beam() finished in {beam_elapsed:.3f}s")
 
+        elif options.agent == 'dfs':
+            agent = BasicAgents()
+
+            print("Running BasicAgents.depth_first_search()...")
+            dfs_start_time = time.perf_counter()
+
+            path = agent.depth_first_search(
+                G=projected_graph,
+                start=start,
+                goal=goal,
+                weight_func=Util.travel_time_weight
+            )
+
+            dfs_elapsed = time.perf_counter() - dfs_start_time
+            print(f"depth_first_search() finished in {dfs_elapsed:3f}s")
+
+        elif options.agent == 'bfs':
+            agent = BasicAgents()
+
+            print("Running BasicAgents.breadth_first_search()...")
+            bfs_start_time = time.perf_counter()
+
+            path = agent.breadth_first_search(
+                G=projected_graph,
+                start=start,
+                goal=goal,
+                weight_func=Util.travel_time_weight
+            )
+
+            bfs_elapsed = time.perf_counter() - bfs_start_time
+            print(f"breadth_first_search() finished in {bfs_elapsed:3f}s")
+
+        else:
+            print("Agent not specified correct")
+            return
+
         if path is None:
             print(f"No route found between {start} and {goal}")
         else:
@@ -100,7 +136,7 @@ def runSearch():
 
 def readCommand(argv):
     usageStr = """
-    USAGE:      python solve_route.py <options>
+    USAGE:      python solve_route.py [-a | --agent] [<agent-name>] 
     EXAMPLES:   (1) python solve_route.py
                     - run an A* search
                 (2) python solve_route.py --agent beamsearch -b 7
