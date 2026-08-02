@@ -2,6 +2,7 @@ import itertools
 import heapq
 from util import Util
 import networkx as nx
+from networkx import MultiDiGraph
 
 
 class AstarAgent:
@@ -10,7 +11,7 @@ class AstarAgent:
     graph with different start/goal pairs for testing
     """
 
-    def astar(self, G, start, goal, heuristic, weight_func):
+    def astar(self, G: MultiDiGraph, start, goal, heuristic, weight_func):
         """
         heuristic(node, goal) -> estimated cost from `node` to `goal`.
         Must be admissible (never overestimate the true remaining cost) or the
@@ -66,15 +67,17 @@ class AstarAgent:
         return None   # no path exists
 
 class BeamSearchAgent:
-    """
 
-    """
-    def beam_search(G, start, goal, beam_width, heuristic, weight_func):
-        """
+    def beam_search(G: MultiDiGraph, 
+                    start: int, 
+                    goal: int, 
+                    beam_width: int, 
+                    heuristic = Util.speed_and_distance_heuristic, 
+                    weight_func = Util.travel_time_weight):
         
-        """
-        current_level = [start]
-        visited = set()
+        print("Initializing BEAM SEARCH...")
+        current_level = [(heuristic(start, goal), start)]
+        print(f"Current_level contains nodes: {current_level}")
         came_from = {}
         g_score = { start: 0 }
 
@@ -82,17 +85,12 @@ class BeamSearchAgent:
             all_successors = []
 
             # Generate all successors from current level
-            for current_node in current_level:
+            for _, current_node in current_level:
                 if current_node == goal:
-                    return Util._reconstruct_path(came_from=came_from, node=current_node) # Success
+                    print("[GOAL REACHED]")
+                    return Util._reconstruct_path(came_from=came_from, current=current_node) # Success
 
-                if current_node in visited:
-                    continue
-                visited.add(current_node)
-                
-                successors = G.successors(current_node)
-                for successor in successors:
-
+                for successor in G.successors(current_node):
                     best_edge_key, best_edge_cost = None, float('inf')
                     for key, edge_data in G[current_node][successor].items():
                         cost = weight_func(current_node, successor, edge_data)
@@ -102,24 +100,21 @@ class BeamSearchAgent:
 
                     current_g = g_score[current_node] + best_edge_cost
 
+                    # TODO: Successor not explored again if pruned, blocked by this conditional
                     if successor not in g_score or current_g < g_score[successor]:
                         g_score[successor] = current_g
                         came_from[successor] = (current_node, best_edge_key)
                         value = current_g + heuristic(successor, goal)
-                        all_successors.append((value, successor))
+                        heapq.heappush(all_successors, (value, successor))
+                    else: continue
 
-                if not all_successors:
-                    return [] # Failure
+            if not all_successors:
+                print("[NO SUCCESSORS FOUND!]")
+                return Util._reconstruct_path(came_from=came_from, current=current_node) # Failure
 
-                # Sort all successors by their scores (best first)
-                sorted_successors = heapq.heapify(all_successors)
+            # Keep only top beam_width candidates for next level
+            print(f"All successors: {all_successors}")
+            current_level = heapq.nsmallest(beam_width, all_successors)
+            print(f"After pruning:  {current_level}\n")
 
-                # Keep only top beam_width candidates for next level
-                current_level = sorted_successors[0 : beam_width]
-
-        # Check final level for goal
-        for current_node in current_level:
-            if current_node == goal:
-                return current_node # Success 
-
-        return [] # Failure
+        return None # Failure
