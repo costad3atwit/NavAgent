@@ -6,9 +6,42 @@ from networkx.classes.multidigraph import MultiDiGraph
 
 
 class Util:
+    # OSM road classes we consider "highways" for the is_highway edge flag
+    HIGHWAY_CLASSES = {"motorway", "motorway_link"}
+
     @staticmethod
     def canReachGoal(G: MultiDiGraph, start_node, goal_node):
         return goal_node in nx.descendants(G, start_node)
+
+    @staticmethod
+    def add_highway_flags(G: MultiDiGraph):
+        # An edge's OSM 'highway' value is a single road class or a list of
+        # classes (when OSMnx merged segments with different tags).
+        for _, _, edge_data in G.edges(data=True):
+            highway = edge_data.get("highway", "")
+            classes = highway if isinstance(highway, list) else [highway]
+            edge_data["is_highway"] = any(c in Util.HIGHWAY_CLASSES for c in classes)
+
+    @staticmethod
+    def highway_stats(G: MultiDiGraph, path):
+        """
+        path is [(node, edge_key), ...] as returned by the agents: entry i's
+        edge_key identifies the edge from path[i-1]'s node into entry i's node.
+        Returns (uses_highways, highway_edge_count, pct_of_route_distance).
+        Requires add_highway_flags() to have been run on G.
+        """
+        highway_count = 0
+        highway_length = 0.0
+        total_length = 0.0
+        for (u, _), (v, key) in zip(path, path[1:]):
+            edge_data = G[u][v][key]
+            length = edge_data.get("length", 0.0)
+            total_length += length
+            if edge_data.get("is_highway"):
+                highway_count += 1
+                highway_length += length
+        pct = (highway_length / total_length * 100) if total_length else 0.0
+        return highway_count > 0, highway_count, pct
 
     @staticmethod
     def _reconstruct_path(came_from, current):

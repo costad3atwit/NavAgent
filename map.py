@@ -4,7 +4,12 @@ from networkx.classes.multidigraph import MultiDiGraph
 class Map:
 
     def load_map(path_to_map: str) -> tuple[MultiDiGraph, MultiDiGraph]:
-        G = ox.io.load_graphml(filepath=path_to_map)
+        # graphml stores every attribute as a string, so the is_highway flag
+        # baked in by setup.py must be converted back to a real boolean
+        G = ox.io.load_graphml(
+            filepath=path_to_map,
+            edge_dtypes={"is_highway": lambda value: value == "True"},
+        )
         Gp = ox.projection.project_graph(G)
 
         return G, Gp
