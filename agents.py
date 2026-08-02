@@ -2,6 +2,7 @@ import itertools
 import heapq
 from collections import deque
 
+from metrics import SearchMetrics
 from util import Util
 
 import networkx as nx
@@ -29,8 +30,11 @@ class AstarAgent:
 
         g_score[n] = best known cost from start to n
         f_score[n] = g_score[n] + heuristic(n, goal)  -> priority in the queue
+
+        Returns (path, SearchMetrics); path is None if no route exists.
         """
 
+        metrics = SearchMetrics()
         counter = itertools.count()
         open_set = []
         heapq.heappush(open_set, (heuristic(start, goal), next(counter), start)) # push start to the queue using heurisitc for priority
@@ -42,11 +46,12 @@ class AstarAgent:
             _, _, current = heapq.heappop(open_set) #take off the highest priority node (lowest f score) item
 
             if current == goal:
-                return Util._reconstruct_path(came_from, current)
+                return Util._reconstruct_path(came_from, current), metrics
 
             if current in visited:
                 continue                     # skip already visited nodes
             visited.add(current)
+            metrics.nodes_expanded += 1
 
             for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
 
@@ -66,8 +71,10 @@ class AstarAgent:
                     came_from[neighbor] = (current, best_edge_key)
                     priority = tentative_g + heuristic(neighbor, goal)
                     heapq.heappush(open_set, (priority, next(counter), neighbor))
+                else:
+                    metrics.nodes_pruned += 1
 
-        return None   # no path exists
+        return None, metrics   # no path exists
 
 class BeamSearchAgent:
     """
@@ -98,9 +105,13 @@ class BeamSearchAgent:
 
         g_score[n] = best known cost from start to n
         f_score[n] = g_score[n] + heuristic(n, goal)  -> priority in the queue
+
+        Returns (path, SearchMetrics); on failure the path covers only what
+        was reached before the beam emptied.
         """
-        
+
         print("Initializing BEAM SEARCH...")
+        metrics = SearchMetrics()
         current_level = [(heuristic(start, goal), start)]
         print(f"Current_level contains nodes: {current_level}")
         came_from = {}
@@ -113,8 +124,9 @@ class BeamSearchAgent:
             for _, current_node in current_level:
                 if current_node == goal:
                     print("[SUCCESS, GOAL REACHED]")
-                    return Util._reconstruct_path(came_from=came_from, current=current_node) # Success
+                    return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Success
 
+                metrics.nodes_expanded += 1
                 for successor in G.successors(current_node):
                     best_edge_key, best_edge_cost = None, float('inf')
                     for key, edge_data in G[current_node][successor].items():
@@ -130,16 +142,19 @@ class BeamSearchAgent:
                         came_from[successor] = (current_node, best_edge_key)
                         value = current_g + heuristic(successor, goal)
                         heapq.heappush(all_successors, (value, successor))
-                    else: continue
+                    else:
+                        metrics.nodes_pruned += 1
 
             if not all_successors:
                 print("[FAILURE, NO SUCCESSORS]")
-                return Util._reconstruct_path(came_from=came_from, current=current_node) # Failure
+                return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Failure
 
-            # Keep only top beam_width candidates for next level
+            # Keep only top beam_width candidates for next level;
+            # everything cut by the beam width counts as pruned
+            metrics.nodes_pruned += max(0, len(all_successors) - beam_width)
             current_level = heapq.nsmallest(beam_width, all_successors)
 
-        return None # Failure
+        return None, metrics # Failure
 
 
 class BasicAgents:
@@ -148,6 +163,7 @@ class BasicAgents:
                            start: int, 
                            goal: int,
                            weight_func=Util.travel_time_weight):
+        metrics = SearchMetrics()
         frontier = []
         frontier.append( start )
         visited = set()
@@ -162,8 +178,9 @@ class BasicAgents:
             visited.add(current_node)
 
             if current_node == goal:
-                return Util._reconstruct_path(came_from=came_from, current=current_node)
+                return Util._reconstruct_path(came_from=came_from, current=current_node), metrics
 
+            metrics.nodes_expanded += 1
             for successor in G.successors(current_node):
 
                 best_edge_key, best_edge_cost = None, float('inf')
@@ -176,14 +193,17 @@ class BasicAgents:
                 if successor not in visited:
                     came_from[successor] = (current_node, best_edge_key)
                     frontier.append( successor )
+                else:
+                    metrics.nodes_pruned += 1
 
-        return None
+        return None, metrics
 
     def breadth_first_search(self,
                              G: MultiDiGraph,
                              start: int,
                              goal: int,
                              weight_func = Util.travel_time_weight):
+        metrics = SearchMetrics()
         frontier = deque()
         frontier.append( start )
         visited = set()
@@ -198,8 +218,9 @@ class BasicAgents:
             visited.add(current_node)
 
             if current_node == goal:
-                return Util._reconstruct_path(came_from=came_from, current=current_node)
+                return Util._reconstruct_path(came_from=came_from, current=current_node), metrics
 
+            metrics.nodes_expanded += 1
             for successor in G.successors(current_node):
 
                 best_edge_key, best_edge_cost = None, float('inf')
@@ -212,5 +233,7 @@ class BasicAgents:
                 if successor not in visited:
                     came_from[successor] = (current_node, best_edge_key)
                     frontier.append( successor )
+                else:
+                    metrics.nodes_pruned += 1
 
-        return None
+        return None, metrics
