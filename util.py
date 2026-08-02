@@ -27,8 +27,8 @@ class Util:
         """
         path is [(node, edge_key), ...] as returned by the agents: entry i's
         edge_key identifies the edge from path[i-1]'s node into entry i's node.
-        Returns (uses_highways, highway_edge_count, pct_of_route_distance).
-        Requires add_highway_flags() to have been run on G.
+        Returns (uses_highways, highway_edge_count, pct_of_route_distance,
+        route_distance_m). Requires add_highway_flags() to have been run on G.
         """
         highway_count = 0
         highway_length = 0.0
@@ -41,7 +41,30 @@ class Util:
                 highway_count += 1
                 highway_length += length
         pct = (highway_length / total_length * 100) if total_length else 0.0
-        return highway_count > 0, highway_count, pct
+        return highway_count > 0, highway_count, pct, total_length
+
+    @staticmethod
+    def path_travel_time(G: MultiDiGraph, path):
+        # Total travel time in seconds of a path of (node, edge_key) pairs as
+        # returned by the agents -- the objective value of the found route.
+        return sum(
+            G[u][v][key]["travel_time"]
+            for (u, _), (v, key) in zip(path, path[1:])
+        )
+
+    @staticmethod
+    def route_stats(G: MultiDiGraph, route):
+        # (distance_m, travel_time_s) of a route given as a plain list of node
+        # ids (e.g. from ox.routing.shortest_path), taking the shortest
+        # parallel edge between each consecutive pair -- the same edge a
+        # length-weighted shortest path would use.
+        total_length = 0.0
+        total_travel_time = 0.0
+        for u, v in zip(route, route[1:]):
+            edge_data = min(G[u][v].values(), key=lambda d: d.get("length", 0.0))
+            total_length += edge_data.get("length", 0.0)
+            total_travel_time += edge_data.get("travel_time", 0.0)
+        return total_length, total_travel_time
 
     @staticmethod
     def _reconstruct_path(came_from, current):

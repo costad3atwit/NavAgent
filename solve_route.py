@@ -24,7 +24,9 @@ def runSearch():
 
     start_goal_pairs.append(((42.251209, -71.005344),(42.366465, -71.054860))) #quincy center -> paul revere library
 
+    start_goal_pairs.append(((42.334004,-71.166438),(42.368669,-71.085486))) #Boston College -> Ahern Field (Cambridge)
 
+    start_goal_pairs.append(((42.368885,-71.018870),(42.302347,-71.089611))) #Terminal E (logan) -> Franklin Park zoo
 
     for (start_latlon, goal_latlon) in start_goal_pairs:
         print("Snapping start and goal to nearest graph nodes...")
@@ -108,7 +110,14 @@ def runSearch():
         if path is not None:
             (metrics.uses_highways,
              metrics.highway_edge_count,
-             metrics.highway_distance_pct) = Util.highway_stats(projected_graph, path)
+             metrics.highway_distance_pct,
+             metrics.route_distance_m) = Util.highway_stats(projected_graph, path)
+            metrics.route_travel_time_s = Util.path_travel_time(projected_graph, path)
+
+            print("Computing shortest (by distance) route for comparison...")
+            shortest_route = ox.routing.shortest_path(G=projected_graph, orig=start, dest=goal, weight="length")
+            (metrics.shortest_route_distance_m,
+             metrics.shortest_route_travel_time_s) = Util.route_stats(projected_graph, shortest_route)
 
         metrics.report(options.agent)
 
@@ -117,9 +126,6 @@ def runSearch():
         else:
             print(f"Fastest route found with {len(path)} nodes")
             fastest_route = [node for node, _ in path]
-
-            print("Computing shortest (by distance) route for comparison...")
-            shortest_route = ox.routing.shortest_path(G=projected_graph, orig=start, dest=goal, weight="length")
 
             print(f"Shortest route found with {len(shortest_route)} nodes, plotting both routes...")
             fig, ax = Map.plot_routes(
