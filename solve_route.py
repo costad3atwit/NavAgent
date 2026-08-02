@@ -136,7 +136,7 @@ def runSearch():
 
 def readCommand(argv):
     usageStr = """
-    USAGE:      python solve_route.py [-a | --agent] [<agent-name>] 
+    USAGE:      python solve_route.py [-a | --agent] [<astar | beamsearch | dfs | bfs>] 
     EXAMPLES:   (1) python solve_route.py
                     - run an A* search
                 (2) python solve_route.py --agent beamsearch -b 7
