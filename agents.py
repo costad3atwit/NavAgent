@@ -67,13 +67,35 @@ class AstarAgent:
         return None   # no path exists
 
 class BeamSearchAgent:
-
-    def beam_search(G: MultiDiGraph, 
+    """
+    Beam search class containing the algorithm for beam search.
+    Reusable over different graphs, starts/goals, etc.
+    """
+    def beam_search(self, G: MultiDiGraph, 
                     start: int, 
                     goal: int, 
                     beam_width: int, 
                     heuristic = Util.speed_and_distance_heuristic, 
                     weight_func = Util.travel_time_weight):
+        """
+        Like A* search, beam search also uses a heuristic evaluation. Unlike
+        A*, beam search uses this evaluation to prune nodes of less priority
+        and keep an arbitrary amount to explore (the beam width). 
+
+        heuristic(node, goal) -> estimated cost from `node` to `goal`.
+        Must be admissible (never overestimate the true remaining cost) or the
+        path found isn't guaranteed optimal. Whatever units it returns must
+        match weight_func's units (e.g. don't mix a distance heuristic with
+        a time-based weight_func).
+
+        weight_func(u, v, edge_data) -> cost of a single edge from u to v,
+        where edge_data is one parallel edge's attribute dict from a
+        MultiDiGraph (G[u][v][key]). Called once per parallel edge so the
+        cheapest of several u->v edges can be picked.
+
+        g_score[n] = best known cost from start to n
+        f_score[n] = g_score[n] + heuristic(n, goal)  -> priority in the queue
+        """
         
         print("Initializing BEAM SEARCH...")
         current_level = [(heuristic(start, goal), start)]
@@ -87,7 +109,7 @@ class BeamSearchAgent:
             # Generate all successors from current level
             for _, current_node in current_level:
                 if current_node == goal:
-                    print("[GOAL REACHED]")
+                    print("[SUCCESS, GOAL REACHED]")
                     return Util._reconstruct_path(came_from=came_from, current=current_node) # Success
 
                 for successor in G.successors(current_node):
@@ -100,7 +122,6 @@ class BeamSearchAgent:
 
                     current_g = g_score[current_node] + best_edge_cost
 
-                    # TODO: Successor not explored again if pruned, blocked by this conditional
                     if successor not in g_score or current_g < g_score[successor]:
                         g_score[successor] = current_g
                         came_from[successor] = (current_node, best_edge_key)
@@ -109,12 +130,10 @@ class BeamSearchAgent:
                     else: continue
 
             if not all_successors:
-                print("[NO SUCCESSORS FOUND!]")
+                print("[FAILURE, NO SUCCESSORS]")
                 return Util._reconstruct_path(came_from=came_from, current=current_node) # Failure
 
             # Keep only top beam_width candidates for next level
-            print(f"All successors: {all_successors}")
             current_level = heapq.nsmallest(beam_width, all_successors)
-            print(f"After pruning:  {current_level}\n")
 
         return None # Failure
