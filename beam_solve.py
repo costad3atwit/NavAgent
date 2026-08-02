@@ -46,7 +46,7 @@ for (start_latlon, goal_latlon) in start_goal_pairs:
         G=projected_graph,
         start=start,
         goal=goal,
-        beam_width=9,
+        beam_width=7, # Beam width needed for test cases
         heuristic=heuristic,
         weight_func=Util.travel_time_weight,
     )
