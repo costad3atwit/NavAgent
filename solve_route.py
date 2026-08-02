@@ -1,4 +1,5 @@
 import time
+import tracemalloc
 
 import osmnx as ox
 from optparse import OptionParser
@@ -42,80 +43,74 @@ def runSearch():
 
         heuristic = Util.speed_and_distance_heuristic(projected_graph, max_speed_mps)
 
-        agent = None
-        path = None
-        
         if options.agent == 'astar':
             agent = AstarAgent()
-
-            print("Running AstarAgent.astar()...")
-            astar_start_time = time.perf_counter()
-
-            path = agent.astar(
-                projected_graph,
-                start,
-                goal,
-                heuristic=heuristic,
-                weight_func=Util.travel_time_weight,
-            )
-
-            astar_elapsed = time.perf_counter() - astar_start_time
-            print(f"astar() finished in {astar_elapsed:.3f}s")
+            def search():
+                return agent.astar(
+                    projected_graph,
+                    start,
+                    goal,
+                    heuristic=heuristic,
+                    weight_func=Util.travel_time_weight,
+                )
 
         elif options.agent == 'beamsearch':
             agent = BeamSearchAgent()
-            beam_width = options.beamwidth
-
-            print("Running BeamAgent.beam()...")
-            beam_start_time = time.perf_counter()
-
-            path = agent.beam_search(
-                G=projected_graph,
-                start=start,
-                goal=goal,
-                beam_width=beam_width,
-                heuristic=heuristic,
-                weight_func=Util.travel_time_weight,
-            )
-
-            beam_elapsed = time.perf_counter() - beam_start_time
-            print(f"beam() finished in {beam_elapsed:.3f}s")
+            def search():
+                return agent.beam_search(
+                    G=projected_graph,
+                    start=start,
+                    goal=goal,
+                    beam_width=options.beamwidth,
+                    heuristic=heuristic,
+                    weight_func=Util.travel_time_weight,
+                )
 
         elif options.agent == 'dfs':
             agent = BasicAgents()
-
-            print("Running BasicAgents.depth_first_search()...")
-            dfs_start_time = time.perf_counter()
-
-            path = agent.depth_first_search(
-                G=projected_graph,
-                start=start,
-                goal=goal,
-                weight_func=Util.travel_time_weight
-            )
-
-            dfs_elapsed = time.perf_counter() - dfs_start_time
-            print(f"depth_first_search() finished in {dfs_elapsed:3f}s")
+            def search():
+                return agent.depth_first_search(
+                    G=projected_graph,
+                    start=start,
+                    goal=goal,
+                    weight_func=Util.travel_time_weight,
+                )
 
         elif options.agent == 'bfs':
             agent = BasicAgents()
-
-            print("Running BasicAgents.breadth_first_search()...")
-            bfs_start_time = time.perf_counter()
-
-            path = agent.breadth_first_search(
-                G=projected_graph,
-                start=start,
-                goal=goal,
-                weight_func=Util.travel_time_weight
-            )
-
-            bfs_elapsed = time.perf_counter() - bfs_start_time
-            print(f"breadth_first_search() finished in {bfs_elapsed:3f}s")
+            def search():
+                return agent.breadth_first_search(
+                    G=projected_graph,
+                    start=start,
+                    goal=goal,
+                    weight_func=Util.travel_time_weight,
+                )
 
         else:
             print("Agent not specified correct")
             return
+
+        # timed run
+        print(f"Running {options.agent}...")
+        search_start_time = time.perf_counter()
+        path, metrics = search()
+        metrics.compute_time_s = time.perf_counter() - search_start_time
+        print(f"{options.agent} finished in {metrics.compute_time_s:.3f}s")
+
+        # second run under tracemalloc for peak memory; traced separately
+        # because tracing slows the search down and would skew the timing
+        print("Tracing memory usage (re-running the search, may take a while)...")
+        tracemalloc.start()
+        search()
+        metrics.peak_memory_bytes = tracemalloc.get_traced_memory()[1]
+        tracemalloc.stop()
+
+        if path is not None:
+            (metrics.uses_highways,
+             metrics.highway_edge_count,
+             metrics.highway_distance_pct) = Util.highway_stats(projected_graph, path)
+
+        metrics.report(options.agent)
 
         if path is None:
             print(f"No route found between {start} and {goal}")
