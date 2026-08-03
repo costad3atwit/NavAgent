@@ -33,6 +33,9 @@ class AstarAgent:
 
         Returns (path, SearchMetrics); path is None if no route exists.
         """
+        from fileIO import createPath
+        path = createPath(folder_name="astar_output", output_name="astar")
+        output_file = open(path, "w")
 
         metrics = SearchMetrics()
         counter = itertools.count()
@@ -43,6 +46,7 @@ class AstarAgent:
         visited = set()             # nodes we've already expanded/finalized
 
         while open_set:
+            output_file.write(f"\nOpen set: {[x[2] for x in open_set]}")
             _, _, current = heapq.heappop(open_set) #take off the highest priority node (lowest f score) item
 
             if current == goal:
@@ -52,6 +56,7 @@ class AstarAgent:
                 continue                     # skip already visited nodes
             visited.add(current)
             metrics.nodes_expanded += 1
+            output_file.write(f"\nExpanding node: {current}")
 
             for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
 
@@ -73,7 +78,7 @@ class AstarAgent:
                     heapq.heappush(open_set, (priority, next(counter), neighbor))
                 else:
                     metrics.nodes_pruned += 1
-
+        output_file.close()
         return None, metrics   # no path exists
 
 class BeamSearchAgent:
@@ -110,7 +115,6 @@ class BeamSearchAgent:
         was reached before the beam emptied.
         """
         from fileIO import createPath
-
         path = createPath(folder_name="beam_search_output", output_name="beam_search")
         output_file = open(path, "w")
 
@@ -123,7 +127,6 @@ class BeamSearchAgent:
 
         while current_level:
             output_file.write(f"\nCurrent Level Nodes:\n{[x[1] for x in current_level]}")
-            output_file.write(f"\nExpanding node {current_node}")
             all_successors = []
 
             # Generate all successors from current level
@@ -136,6 +139,7 @@ class BeamSearchAgent:
 
                 metrics.nodes_expanded += 1
                 for successor in G.successors(current_node):
+                    output_file.write(f"\nExpanding node: {successor}")
                     best_edge_key, best_edge_cost = None, float('inf')
                     for key, edge_data in G[current_node][successor].items():
                         cost = weight_func(current_node, successor, edge_data)
