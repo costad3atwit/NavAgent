@@ -123,6 +123,7 @@ class BeamSearchAgent:
 
         while current_level:
             output_file.write(f"\nCurrent Level Nodes:\n{[x[1] for x in current_level]}")
+            output_file.write(f"\nExpanding node {current_node}")
             all_successors = []
 
             # Generate all successors from current level
@@ -134,7 +135,6 @@ class BeamSearchAgent:
                     return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Success
 
                 metrics.nodes_expanded += 1
-                output_file.write(f"\nExpanding node: {current_node}")
                 for successor in G.successors(current_node):
                     best_edge_key, best_edge_cost = None, float('inf')
                     for key, edge_data in G[current_node][successor].items():
@@ -223,7 +223,7 @@ class BasicAgents:
                              goal: int,
                              weight_func = Util.travel_time_weight):
         from fileIO import createPath
-        path = createPath(folder_name="bfs_output", output_name="dfs")
+        path = createPath(folder_name="bfs_output", output_name="bfs")
         output_file = open(path, "w")
         
         metrics = SearchMetrics()
