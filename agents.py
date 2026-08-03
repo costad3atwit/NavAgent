@@ -109,24 +109,32 @@ class BeamSearchAgent:
         Returns (path, SearchMetrics); on failure the path covers only what
         was reached before the beam emptied.
         """
+        from fileIO import createPath
 
-        print("Initializing BEAM SEARCH...")
+        path = createPath(folder_name="beam_search_output", output_name="beam_search")
+        output_file = open(path, "w")
+
+        output_file.write("Initializing BEAM SEARCH...")
         metrics = SearchMetrics()
         current_level = [(heuristic(start, goal), start)]
-        print(f"Current_level contains nodes: {current_level}")
+        output_file.write(f"Current Level Nodes:\n{current_level}")
         came_from = {}
         g_score = { start: 0 }
 
         while current_level:
+            output_file.write(f"\nCurrent Level Nodes:\n{[x[1] for x in current_level]}")
             all_successors = []
 
             # Generate all successors from current level
             for _, current_node in current_level:
                 if current_node == goal:
-                    print("[SUCCESS, GOAL REACHED]")
+                    # print("[SUCCESS, GOAL REACHED]")
+                    output_file.write("\n[SUCCESS, GOAL REACHED]")
+                    output_file.close()
                     return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Success
 
                 metrics.nodes_expanded += 1
+                output_file.write(f"\nExpanding node: {current_node}")
                 for successor in G.successors(current_node):
                     best_edge_key, best_edge_cost = None, float('inf')
                     for key, edge_data in G[current_node][successor].items():
@@ -146,14 +154,18 @@ class BeamSearchAgent:
                         metrics.nodes_pruned += 1
 
             if not all_successors:
-                print("[FAILURE, NO SUCCESSORS]")
+                # print("[FAILURE, NO SUCCESSORS]")
+                output_file.write("\n[FAILURE, NO SUCCESSORS]")
+                output_file.close()
                 return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Failure
 
             # Keep only top beam_width candidates for next level;
             # everything cut by the beam width counts as pruned
+            output_file.write(f"\nAll successors:\n{[x[1] for x in all_successors]}")
             metrics.nodes_pruned += max(0, len(all_successors) - beam_width)
             current_level = heapq.nsmallest(beam_width, all_successors)
-
+            output_file.write(f"\nPruned list:\n{[x[1] for x in current_level]}\n")
+        output_file.close()
         return None, metrics # Failure
 
 
@@ -163,6 +175,10 @@ class BasicAgents:
                            start: int, 
                            goal: int,
                            weight_func=Util.travel_time_weight):
+        from fileIO import createPath
+        path = createPath(folder_name="dfs_output", output_name="dfs")
+        output_file = open(path, "w")
+        
         metrics = SearchMetrics()
         frontier = []
         frontier.append( start )
@@ -176,11 +192,12 @@ class BasicAgents:
                 continue
 
             visited.add(current_node)
-
+            output_file.write(f"\nExpanding node: {current_node}")
             if current_node == goal:
                 return Util._reconstruct_path(came_from=came_from, current=current_node), metrics
 
             metrics.nodes_expanded += 1
+
             for successor in G.successors(current_node):
 
                 best_edge_key, best_edge_cost = None, float('inf')
@@ -195,7 +212,9 @@ class BasicAgents:
                     frontier.append( successor )
                 else:
                     metrics.nodes_pruned += 1
+            output_file.write(f"\nFrontier: {frontier}\n")
 
+        output_file.close()
         return None, metrics
 
     def breadth_first_search(self,
@@ -203,6 +222,10 @@ class BasicAgents:
                              start: int,
                              goal: int,
                              weight_func = Util.travel_time_weight):
+        from fileIO import createPath
+        path = createPath(folder_name="bfs_output", output_name="dfs")
+        output_file = open(path, "w")
+        
         metrics = SearchMetrics()
         frontier = deque()
         frontier.append( start )
@@ -221,6 +244,7 @@ class BasicAgents:
                 return Util._reconstruct_path(came_from=came_from, current=current_node), metrics
 
             metrics.nodes_expanded += 1
+            output_file.write(f"\nExpanding node: {current_node}")
             for successor in G.successors(current_node):
 
                 best_edge_key, best_edge_cost = None, float('inf')
@@ -235,5 +259,6 @@ class BasicAgents:
                     frontier.append( successor )
                 else:
                     metrics.nodes_pruned += 1
-
+            output_file.write(f"\nFrontier: {frontier}\n")
+        output_file.close()
         return None, metrics
