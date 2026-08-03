@@ -20,13 +20,20 @@ def runSearch():
 
     start_goal_pairs = []
     # (lat, lon) test locations
-    start_goal_pairs.append(((42.330397, -71.103089),(42.359206, -71.067703))) #hillside market -> beacon hill market
-
-    start_goal_pairs.append(((42.251209, -71.005344),(42.366465, -71.054860))) #quincy center -> paul revere library
-
-    start_goal_pairs.append(((42.334004,-71.166438),(42.368669,-71.085486))) #Boston College -> Ahern Field (Cambridge)
-
-    start_goal_pairs.append(((42.368885,-71.018870),(42.302347,-71.089611))) #Terminal E (logan) -> Franklin Park zoo
+    match options.route:
+        case 'hillside-beacon':
+            start_goal_pairs.append(((42.330397, -71.103089),(42.359206, -71.067703))) #Hillside Market -> Beacon Hill Market
+        case 'quincy-library':
+            start_goal_pairs.append(((42.251209, -71.005344),(42.366465, -71.054860))) # Quincy Center -> Paul Revere Library
+        case 'bc-ahern':
+            start_goal_pairs.append(((42.334004,-71.166438),(42.368669,-71.085486))) # Boston College -> Ahern Field (Cambridge)
+        case 'logan-franklin':
+            start_goal_pairs.append(((42.368885,-71.018870),(42.302347,-71.089611))) # Terminal E (Logan) -> Franklin Park zoo
+        case 'all':
+            start_goal_pairs.append(((42.330397, -71.103089),(42.359206, -71.067703))) #Hillside Market -> Beacon Hill Market
+            start_goal_pairs.append(((42.251209, -71.005344),(42.366465, -71.054860))) # Quincy Center -> Paul Revere Library
+            start_goal_pairs.append(((42.334004,-71.166438),(42.368669,-71.085486))) # Boston College -> Ahern Field (Cambridge)
+            start_goal_pairs.append(((42.368885,-71.018870),(42.302347,-71.089611))) # Terminal E (Logan) -> Franklin Park zoo
 
     for (start_latlon, goal_latlon) in start_goal_pairs:
         print("Snapping start and goal to nearest graph nodes...")
@@ -45,52 +52,53 @@ def runSearch():
 
         heuristic = Util.speed_and_distance_heuristic(projected_graph, max_speed_mps)
 
-        if options.agent == 'astar':
-            agent = AstarAgent()
-            def search():
-                return agent.astar(
-                    projected_graph,
-                    start,
-                    goal,
-                    heuristic=heuristic,
-                    weight_func=Util.travel_time_weight,
-                )
+        match options.agent:
+            case'astar':
+                agent = AstarAgent()
+                def search():
+                    return agent.astar(
+                        projected_graph,
+                        start,
+                        goal,
+                        heuristic=heuristic,
+                        weight_func=Util.travel_time_weight,
+                    )
 
-        elif options.agent == 'beamsearch':
-            agent = BeamSearchAgent()
-            def search():
-                return agent.beam_search(
-                    G=projected_graph,
-                    start=start,
-                    goal=goal,
-                    beam_width=options.beamwidth,
-                    heuristic=heuristic,
-                    weight_func=Util.travel_time_weight,
-                )
+            case 'beamsearch':
+                agent = BeamSearchAgent()
+                def search():
+                    return agent.beam_search(
+                        G=projected_graph,
+                        start=start,
+                        goal=goal,
+                        beam_width=options.beamwidth,
+                        heuristic=heuristic,
+                        weight_func=Util.travel_time_weight,
+                    )
 
-        elif options.agent == 'dfs':
-            agent = BasicAgents()
-            def search():
-                return agent.depth_first_search(
-                    G=projected_graph,
-                    start=start,
-                    goal=goal,
-                    weight_func=Util.travel_time_weight,
-                )
+            case 'dfs':
+                agent = BasicAgents()
+                def search():
+                    return agent.depth_first_search(
+                        G=projected_graph,
+                        start=start,
+                        goal=goal,
+                        weight_func=Util.travel_time_weight,
+                    )
 
-        elif options.agent == 'bfs':
-            agent = BasicAgents()
-            def search():
-                return agent.breadth_first_search(
-                    G=projected_graph,
-                    start=start,
-                    goal=goal,
-                    weight_func=Util.travel_time_weight,
-                )
+            case 'bfs':
+                agent = BasicAgents()
+                def search():
+                    return agent.breadth_first_search(
+                        G=projected_graph,
+                        start=start,
+                        goal=goal,
+                        weight_func=Util.travel_time_weight,
+                    )
 
-        else:
-            print("Agent not specified correct")
-            return
+            case _:
+                print("Agent not specified correctly\nUSAGE: python solve_route.py [-a | --agent] [<astar | beamsearch | dfs | bfs>]")
+                return
 
         # timed run
         print(f"Running {options.agent}...")
@@ -147,15 +155,17 @@ def readCommand(argv):
     parser = OptionParser(usageStr)
 
     parser.add_option('-a', '--agent', dest='agent', type='str',
-                      help='the agent to navigate the graph', metavar='AGENT', default='astar')
+                      help='the agent to navigate the graph [-a | --agent] [<astar | beamsearch | dfs | bfs>]', metavar='AGENT', default='astar')
     
     parser.add_option('-b', '--beamwidth', dest='beamwidth', type='int',
                       help='beam width if using beam search', metavar='BEAMWIDTH', default='7')
+    
+    parser.add_option('-r', '--route', dest="route", type='str',
+                      help='which goal destination pair to solve', metavar='ROUTE', default='all')
 
     options, otherjunk = parser.parse_args(argv)
     if len(otherjunk) != 0:
         raise Exception('Command line input not understood: ' + str(otherjunk))
-    args = dict()
 
     return options
 
