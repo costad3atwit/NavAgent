@@ -25,7 +25,17 @@ class Map:
 
         return fig, ax
 
-    def plot_routes(graph: MultiDiGraph, routes, route_colors):
-        fig, ax = ox.plot.plot_graph_routes(graph, routes=routes, route_colors=route_colors, route_linewidths=6, node_size=0)
+    def plot_routes(graph: MultiDiGraph, routes, route_colors, explored_edges=None):
+        # highlight edges touched by the search; extra kwargs are forwarded
+        # by osmnx down to plot_graph, which takes a per-edge color list
+        # ordered like graph.edges(keys=True)
+        kwargs = {}
+        if explored_edges:
+            kwargs["edge_color"] = [
+                "#d95f0e" if edge in explored_edges else "#333333"
+                for edge in graph.edges(keys=True)
+            ]
+
+        fig, ax = ox.plot.plot_graph_routes(graph, routes=routes, route_colors=route_colors, route_linewidths=6, node_size=0, **kwargs)
 
         return fig, ax

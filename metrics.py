@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -11,7 +11,10 @@ class SearchMetrics:
     nodes_pruned:   successors generated but not added to the frontier
                     (already visited / no g-score improvement); beam search
                     also counts nodes cut by the beam width each level.
+    explored_edges: every (u, v, key) edge expanded during the search,
+                    for plotting; empty when recording is disabled.
     """
+    explored_edges: set = field(default_factory=set, repr=False)
     nodes_expanded: int = 0
     nodes_pruned: int = 0
     compute_time_s: float = 0.0

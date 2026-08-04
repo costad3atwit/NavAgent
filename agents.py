@@ -15,7 +15,7 @@ class AstarAgent:
     graph with different start/goal pairs for testing
     """
 
-    def astar(self, G: MultiDiGraph, start, goal, heuristic, weight_func):
+    def astar(self, G: MultiDiGraph, start, goal, heuristic, weight_func, record_explored=True):
         """
         heuristic(node, goal) -> estimated cost from `node` to `goal`.
         Must be admissible (never overestimate the true remaining cost) or the
@@ -69,6 +69,9 @@ class AstarAgent:
                         best_edge_cost = cost
                         best_edge_key = key
 
+                if record_explored:
+                    metrics.explored_edges.add((current, neighbor, best_edge_key))
+
                 tentative_g = g_score[current] + best_edge_cost
 
                 if neighbor not in g_score or tentative_g < g_score[neighbor]:
@@ -90,8 +93,9 @@ class BeamSearchAgent:
                     start: int, 
                     goal: int, 
                     beam_width: int, 
-                    heuristic = Util.speed_and_distance_heuristic, 
-                    weight_func = Util.travel_time_weight):
+                    heuristic = Util.speed_and_distance_heuristic,
+                    weight_func = Util.travel_time_weight,
+                    record_explored = True):
         """
         Like A* search, beam search also uses a heuristic evaluation. Unlike
         A*, beam search uses this evaluation to prune nodes of less priority
@@ -147,6 +151,9 @@ class BeamSearchAgent:
                             best_edge_cost = cost
                             best_edge_key = key
 
+                    if record_explored:
+                        metrics.explored_edges.add((current_node, successor, best_edge_key))
+
                     current_g = g_score[current_node] + best_edge_cost
 
                     if successor not in g_score or current_g < g_score[successor]:
@@ -178,7 +185,8 @@ class BasicAgents:
                            G: MultiDiGraph, 
                            start: int, 
                            goal: int,
-                           weight_func=Util.travel_time_weight):
+                           weight_func=Util.travel_time_weight,
+                           record_explored=True):
         from fileIO import createPath
         path = createPath(folder_name="dfs_output", output_name="dfs")
         output_file = open(path, "w")
@@ -211,6 +219,9 @@ class BasicAgents:
                         best_edge_cost = cost
                         best_edge_key = key
 
+                if record_explored:
+                    metrics.explored_edges.add((current_node, successor, best_edge_key))
+
                 if successor not in visited:
                     came_from[successor] = (current_node, best_edge_key)
                     frontier.append( successor )
@@ -225,7 +236,8 @@ class BasicAgents:
                              G: MultiDiGraph,
                              start: int,
                              goal: int,
-                             weight_func = Util.travel_time_weight):
+                             weight_func = Util.travel_time_weight,
+                             record_explored = True):
         from fileIO import createPath
         path = createPath(folder_name="bfs_output", output_name="bfs")
         output_file = open(path, "w")
@@ -257,6 +269,9 @@ class BasicAgents:
                     if cost < best_edge_cost:
                         best_edge_cost = cost
                         best_edge_key = key
+
+                if record_explored:
+                    metrics.explored_edges.add((current_node, successor, best_edge_key))
 
                 if successor not in visited:
                     came_from[successor] = (current_node, best_edge_key)
