@@ -55,7 +55,7 @@ def runSearch():
         match options.agent:
             case'astar':
                 agent = AstarAgent()
-                def search(record_explored=True):
+                def search(record_explored=True, log_output=True):
                     return agent.astar(
                         projected_graph,
                         start,
@@ -63,11 +63,12 @@ def runSearch():
                         heuristic=heuristic,
                         weight_func=Util.travel_time_weight,
                         record_explored=record_explored,
+                        log_output=log_output,
                     )
 
             case 'beamsearch':
                 agent = BeamSearchAgent()
-                def search(record_explored=True):
+                def search(record_explored=True, log_output=True):
                     return agent.beam_search(
                         G=projected_graph,
                         start=start,
@@ -76,48 +77,56 @@ def runSearch():
                         heuristic=heuristic,
                         weight_func=Util.travel_time_weight,
                         record_explored=record_explored,
+                        log_output=log_output,
                     )
 
             case 'dfs':
                 agent = BasicAgents()
-                def search(record_explored=True):
+                def search(record_explored=True, log_output=True):
                     return agent.depth_first_search(
                         G=projected_graph,
                         start=start,
                         goal=goal,
                         weight_func=Util.travel_time_weight,
                         record_explored=record_explored,
+                        log_output=log_output,
                     )
 
             case 'bfs':
                 agent = BasicAgents()
-                def search(record_explored=True):
+                def search(record_explored=True, log_output=True):
                     return agent.breadth_first_search(
                         G=projected_graph,
                         start=start,
                         goal=goal,
                         weight_func=Util.travel_time_weight,
                         record_explored=record_explored,
+                        log_output=log_output,
                     )
 
             case _:
                 print("Agent not specified correctly\nUSAGE: python solve_route.py [-a | --agent] [<astar | beamsearch | dfs | bfs>]")
                 return
 
-        # timed run
+        # main run: records the explored edges for plotting
         print(f"Running {options.agent}...")
-        search_start_time = time.perf_counter()
         path, metrics = search()
+
+        # timed run done separately, without explored-edge recording, so the
+        # extra bookkeeping doesn't inflate the timing
+        print("Timing the search (re-running without edge recording)...")
+        search_start_time = time.perf_counter()
+        search(record_explored=False, log_output=False)
         metrics.compute_time_s = time.perf_counter() - search_start_time
         print(f"{options.agent} finished in {metrics.compute_time_s:.3f}s")
 
-        # second run under tracemalloc for peak memory; traced separately
+        # third run under tracemalloc for peak memory; traced separately
         # because tracing slows the search down and would skew the timing,
         # and without explored-edge recording so the extra bookkeeping
         # doesn't inflate the peak
         print("Tracing memory usage (re-running the search, may take a while)...")
         tracemalloc.start()
-        search(record_explored=False)
+        search(record_explored=False, log_output=False)
         metrics.peak_memory_bytes = tracemalloc.get_traced_memory()[1]
         tracemalloc.stop()
 

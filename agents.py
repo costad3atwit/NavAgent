@@ -15,7 +15,7 @@ class AstarAgent:
     graph with different start/goal pairs for testing
     """
 
-    def astar(self, G: MultiDiGraph, start, goal, heuristic, weight_func, record_explored=True):
+    def astar(self, G: MultiDiGraph, start, goal, heuristic, weight_func, record_explored=True, log_output=True):
         """
         heuristic(node, goal) -> estimated cost from `node` to `goal`.
         Must be admissible (never overestimate the true remaining cost) or the
@@ -33,9 +33,13 @@ class AstarAgent:
 
         Returns (path, SearchMetrics); path is None if no route exists.
         """
-        from fileIO import createPath
-        path = createPath(folder_name="astar_output", output_name="astar")
-        output_file = open(path, "w")
+        # trace logging is skippable so timed/memory-traced runs don't pay
+        # for the per-iteration formatting and file writes
+        output_file = None
+        if log_output:
+            from fileIO import createPath
+            path = createPath(folder_name="astar_output", output_name="astar")
+            output_file = open(path, "w")
 
         metrics = SearchMetrics()
         counter = itertools.count()
@@ -46,17 +50,21 @@ class AstarAgent:
         visited = set()             # nodes we've already expanded/finalized
 
         while open_set:
-            output_file.write(f"\nOpen set: {[x[2] for x in open_set]}")
+            if output_file:
+                output_file.write(f"\nOpen set: {[x[2] for x in open_set]}")
             _, _, current = heapq.heappop(open_set) #take off the highest priority node (lowest f score) item
 
             if current == goal:
+                if output_file:
+                    output_file.close()
                 return Util._reconstruct_path(came_from, current), metrics
 
             if current in visited:
                 continue                     # skip already visited nodes
             visited.add(current)
             metrics.nodes_expanded += 1
-            output_file.write(f"\nExpanding node: {current}")
+            if output_file:
+                output_file.write(f"\nExpanding node: {current}")
 
             for neighbor in G.successors(current):     # outgoing edges only (it's a DiGraph)
 
@@ -81,7 +89,8 @@ class AstarAgent:
                     heapq.heappush(open_set, (priority, next(counter), neighbor))
                 else:
                     metrics.nodes_pruned += 1
-        output_file.close()
+        if output_file:
+            output_file.close()
         return None, metrics   # no path exists
 
 class BeamSearchAgent:
@@ -95,7 +104,8 @@ class BeamSearchAgent:
                     beam_width: int, 
                     heuristic = Util.speed_and_distance_heuristic,
                     weight_func = Util.travel_time_weight,
-                    record_explored = True):
+                    record_explored = True,
+                    log_output = True):
         """
         Like A* search, beam search also uses a heuristic evaluation. Unlike
         A*, beam search uses this evaluation to prune nodes of less priority
@@ -118,32 +128,38 @@ class BeamSearchAgent:
         Returns (path, SearchMetrics); on failure the path covers only what
         was reached before the beam emptied.
         """
-        from fileIO import createPath
-        path = createPath(folder_name="beam_search_output", output_name="beam_search")
-        output_file = open(path, "w")
+        output_file = None
+        if log_output:
+            from fileIO import createPath
+            path = createPath(folder_name="beam_search_output", output_name="beam_search")
+            output_file = open(path, "w")
+            output_file.write("Initializing BEAM SEARCH...")
 
-        output_file.write("Initializing BEAM SEARCH...")
         metrics = SearchMetrics()
         current_level = [(heuristic(start, goal), start)]
-        output_file.write(f"Current Level Nodes:\n{current_level}")
+        if output_file:
+            output_file.write(f"Current Level Nodes:\n{current_level}")
         came_from = {}
         g_score = { start: 0 }
 
         while current_level:
-            output_file.write(f"\nCurrent Level Nodes:\n{[x[1] for x in current_level]}")
+            if output_file:
+                output_file.write(f"\nCurrent Level Nodes:\n{[x[1] for x in current_level]}")
             all_successors = []
 
             # Generate all successors from current level
             for _, current_node in current_level:
                 if current_node == goal:
                     # print("[SUCCESS, GOAL REACHED]")
-                    output_file.write("\n[SUCCESS, GOAL REACHED]")
-                    output_file.close()
+                    if output_file:
+                        output_file.write("\n[SUCCESS, GOAL REACHED]")
+                        output_file.close()
                     return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Success
 
                 metrics.nodes_expanded += 1
                 for successor in G.successors(current_node):
-                    output_file.write(f"\nExpanding node: {successor}")
+                    if output_file:
+                        output_file.write(f"\nExpanding node: {successor}")
                     best_edge_key, best_edge_cost = None, float('inf')
                     for key, edge_data in G[current_node][successor].items():
                         cost = weight_func(current_node, successor, edge_data)
@@ -166,17 +182,21 @@ class BeamSearchAgent:
 
             if not all_successors:
                 # print("[FAILURE, NO SUCCESSORS]")
-                output_file.write("\n[FAILURE, NO SUCCESSORS]")
-                output_file.close()
+                if output_file:
+                    output_file.write("\n[FAILURE, NO SUCCESSORS]")
+                    output_file.close()
                 return Util._reconstruct_path(came_from=came_from, current=current_node), metrics # Failure
 
             # Keep only top beam_width candidates for next level;
             # everything cut by the beam width counts as pruned
-            output_file.write(f"\nAll successors:\n{[x[1] for x in all_successors]}")
+            if output_file:
+                output_file.write(f"\nAll successors:\n{[x[1] for x in all_successors]}")
             metrics.nodes_pruned += max(0, len(all_successors) - beam_width)
             current_level = heapq.nsmallest(beam_width, all_successors)
-            output_file.write(f"\nPruned list:\n{[x[1] for x in current_level]}\n")
-        output_file.close()
+            if output_file:
+                output_file.write(f"\nPruned list:\n{[x[1] for x in current_level]}\n")
+        if output_file:
+            output_file.close()
         return None, metrics # Failure
 
 
@@ -186,11 +206,14 @@ class BasicAgents:
                            start: int, 
                            goal: int,
                            weight_func=Util.travel_time_weight,
-                           record_explored=True):
-        from fileIO import createPath
-        path = createPath(folder_name="dfs_output", output_name="dfs")
-        output_file = open(path, "w")
-        
+                           record_explored=True,
+                           log_output=True):
+        output_file = None
+        if log_output:
+            from fileIO import createPath
+            path = createPath(folder_name="dfs_output", output_name="dfs")
+            output_file = open(path, "w")
+
         metrics = SearchMetrics()
         frontier = []
         frontier.append( start )
@@ -204,8 +227,11 @@ class BasicAgents:
                 continue
 
             visited.add(current_node)
-            output_file.write(f"\nExpanding node: {current_node}")
+            if output_file:
+                output_file.write(f"\nExpanding node: {current_node}")
             if current_node == goal:
+                if output_file:
+                    output_file.close()
                 return Util._reconstruct_path(came_from=came_from, current=current_node), metrics
 
             metrics.nodes_expanded += 1
@@ -227,9 +253,11 @@ class BasicAgents:
                     frontier.append( successor )
                 else:
                     metrics.nodes_pruned += 1
-            output_file.write(f"\nFrontier: {frontier}\n")
+            if output_file:
+                output_file.write(f"\nFrontier: {frontier}\n")
 
-        output_file.close()
+        if output_file:
+            output_file.close()
         return None, metrics
 
     def breadth_first_search(self,
@@ -237,11 +265,14 @@ class BasicAgents:
                              start: int,
                              goal: int,
                              weight_func = Util.travel_time_weight,
-                             record_explored = True):
-        from fileIO import createPath
-        path = createPath(folder_name="bfs_output", output_name="bfs")
-        output_file = open(path, "w")
-        
+                             record_explored = True,
+                             log_output = True):
+        output_file = None
+        if log_output:
+            from fileIO import createPath
+            path = createPath(folder_name="bfs_output", output_name="bfs")
+            output_file = open(path, "w")
+
         metrics = SearchMetrics()
         frontier = deque()
         frontier.append( start )
@@ -257,10 +288,13 @@ class BasicAgents:
             visited.add(current_node)
 
             if current_node == goal:
+                if output_file:
+                    output_file.close()
                 return Util._reconstruct_path(came_from=came_from, current=current_node), metrics
 
             metrics.nodes_expanded += 1
-            output_file.write(f"\nExpanding node: {current_node}")
+            if output_file:
+                output_file.write(f"\nExpanding node: {current_node}")
             for successor in G.successors(current_node):
 
                 best_edge_key, best_edge_cost = None, float('inf')
@@ -278,6 +312,8 @@ class BasicAgents:
                     frontier.append( successor )
                 else:
                     metrics.nodes_pruned += 1
-            output_file.write(f"\nFrontier: {frontier}\n")
-        output_file.close()
+            if output_file:
+                output_file.write(f"\nFrontier: {frontier}\n")
+        if output_file:
+            output_file.close()
         return None, metrics
